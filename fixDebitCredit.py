@@ -26,10 +26,14 @@ def openAndOutput(fileName):
     with open(sourceFileDir + fileName, 'r', encoding='utf-8') as infile,\
         open(sourceFileDir + "fixed_" + fileName, 'w', newline='', encoding='utf-8') as outfile:
         reader = csv.reader(infile)
+        next(reader)  # Skip header row
+        outfile.write('Date,Description,Amount,Status\n')  # Write header row
         for row in reader:
             print(row)
             if row[2] == "Debit":
                 row[3] = str(-abs(float(row[3].strip('$,').replace(',', '' ))))
+            row[2] = row[3]  # Move adjusted amount to Amount column
+            row[3] = 'Cleared'  # Clear Status column
             outfile.write(','.join(row) + '\n')
             print(row)
 
