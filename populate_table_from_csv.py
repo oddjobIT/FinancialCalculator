@@ -16,13 +16,6 @@ sourceFileDir = config.dataDirectory
 testFile = config.fixedTestFile
 runState = config.mode
 
-def requestFileName():
-    if runState == "Test":
-        fileName = testFile
-    else:
-        fileName = input("Enter the file name (with .csv extension): ")
-    return fileName
-
 DB_CONFIG = {
     'user': config.databaseUser,
     'password': config.databaseUserPass,
@@ -30,9 +23,32 @@ DB_CONFIG = {
     'database': config.database
 }
 
-TABLE_NAME = config.table
+def requestFileName():
+    """If the filemode is Test then use the test file listed in config.py
+       Otherwise request the file name from the user
+       No error checking is done here.
+    """
+    if runState == "Test":
+        fileName = testFile
+    else:
+        fileName = input("Enter the file name (with .csv extension): ")
+    return fileName
+
+
+def requestTableName():
+    """If the filemode is Test then use the table listed in config.py
+       Otherwise request the table name from the user
+       No error checking is done here.
+    """
+    if runState == "Test":
+        tableName = config.table
+    else:
+        tableName = input("Enter the table name for account: ")
+    return tableName
+
 
 def connect_to_db():
+    """ Connect to MariaDB Platform """
     try:
         print(f"host = {DB_CONFIG['host']}")
         conn = mariadb.connect(**DB_CONFIG)
@@ -42,18 +58,16 @@ def connect_to_db():
         print(f"Error connecting to MariaDB Platform: {e}")
         sys.exit(1)
 
-def insert_csv_data(cursor, fileName):
+def insert_csv_data(cursor, fileName, tableName):
+    """ Insert data from CSV file into the specified table """
     with open(sourceFileDir + fileName, 'r', encoding='utf-8') as infile:
         reader = csv.reader(infile)
         next(reader)  # Skip header row  
-
-        #insertQuery = f"INSERT INTO {TABLE_NAME} (Date, Description, Amount, Status) VALUES (?, ?, ?, ?)"
-
         for row in reader:
             print(row)
             try:
                 cursor.execute(
-                    f"INSERT INTO {TABLE_NAME} (Date, Description, Amount, Status) VALUES (?, ?, ?, ?)",
+                    f"INSERT INTO {tableName} (Date, Description, Amount, Status) VALUES (?, ?, ?, ?)",
                     (row[0], row[1], float(row[2]), row[3])
                 )
             except mariadb.Error as e:
@@ -62,8 +76,9 @@ def insert_csv_data(cursor, fileName):
 
 def main():
     fileName = requestFileName()
+    tableName = requestTableName()
     cursor = connect_to_db()
-    insert_csv_data(cursor, fileName)
+    insert_csv_data(cursor, fileName, tableName)
     cursor.connection.commit()
     cursor.connection.close()
 
