@@ -15,12 +15,19 @@ import config
 sourceFileDir = config.dataDirectory
 runState = config.mode
 
+
+def convertDateForMySQL(date):
+    month, day, year = date.split("/")
+    return f"{year}-{month.zfill(2)}-{day.zfill(2)}"
+
+
 def requestFileName():
     if runState == "Test":
         fileName = config.testFile
     else:
         fileName = input("Enter the file name (with .csv extension): ")
     return fileName
+
 
 def openAndOutput(fileName):
     with open(sourceFileDir + fileName, 'r', encoding='utf-8') as infile,\
@@ -30,12 +37,14 @@ def openAndOutput(fileName):
         outfile.write('Date,Description,Amount,Status\n')  # Write header row
         for row in reader:
             print(row)
+            row[0] = convertDateForMySQL(row[0])  # Convert date to MySQL format
             if row[2] == "Debit":
                 row[3] = str(-abs(float(row[3].strip('$,').replace(',', '' ))))
             row[2] = row[3]  # Move adjusted amount to Amount column
             row[3] = 'Cleared'  # Clear Status column
             outfile.write(','.join(row) + '\n')
             print(row)
+
 
 def main():
     fileName = requestFileName()
